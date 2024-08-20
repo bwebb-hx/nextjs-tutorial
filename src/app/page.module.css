@@ -27,6 +27,7 @@
   text-align: center;
   color: #00ffcc;
   text-shadow: 0 0 8px #00ffcc;
+  font-family: 'Orbitron', sans-serif;
 }
 
 .inputField {
@@ -64,6 +65,7 @@
 .todoList {
   list-style-type: none;
   padding: 0;
+  font-family: 'Orbitron', sans-serif;
 }
 
 .todoItem {
@@ -86,6 +88,7 @@
   border: none;
   color: #ffffff;
   cursor: pointer;
+  font-family: 'Orbitron', sans-serif;
   box-shadow: 0 0 12px #ff0055;
   transition: transform 0.3s, box-shadow 0.3s;
 }
