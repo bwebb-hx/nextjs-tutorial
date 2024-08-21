@@ -3,8 +3,13 @@
 import TodoList from '@/components/todoList/TodoList';
 import React, { useEffect, useState } from 'react';
 import styles from './page.module.css';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+import { tokenIsValid } from '@/hexabase/hexabase';
 
 const Home: React.FC = () => {
+  const router = useRouter();
+
   const [todos, setTodos] = useState<string[]>([]);
   const [newTodo, setNewTodo] = useState<string>('');
 
@@ -59,6 +64,20 @@ const Home: React.FC = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // make sure user is logged in
+  const token = Cookies.get("tokenHxb");
+
+  if (!token) {
+    router.push('/login');
+  } else {
+    // if a token already exists, asynchronously validate it
+    (async () => {
+      if (!await tokenIsValid(token)) {
+        router.push('/login');
+      }
+    })();
+  }
 
   return (
     <div className={styles.container}>
