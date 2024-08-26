@@ -144,43 +144,61 @@ This means the client starts as `null`, and we take care of instantiating it onc
 
 Let's talk about authentication. In order to use the Hexabase client and its API, you will need to be authenticated first.
 
-As we show in the example above, you can login with user credentials using the `login` function. This is probably the way most people will want to authenticate their applications, so we will be proceeding with this functionality in this tutorial. But it's also worth mentioning that you can get "public tokens" in Hexabase and use them in your development environments, if you're just wanting easy access for development purposes and don't want to have to go through login flows, etc.
-
-In `/hexabase/hexabase.ts`, we have an exported function `loginToHexabase` that we can call to login:
+You can login to Hexabase with user credentials using the `login` function. This works for any Hexabase account, and returns data such as an authentication token for this user. However, the important part here is that the user will only be authenticated for whatever workspaces their account is added to. So if you try to use this authenticated client to do an action on a workspace that this user isn't authorized to use, it will still fail.
 
 ```typescript
-export async function loginToHexabase(
-    email: string,
-    password: string
-): Promise<LoginResult> {
-    client = new HexabaseClient();
+client = new HexabaseClient();
 
-    const loginSuccess = await client.login({ email, password });
-    if (!loginSuccess) {
-        return { success: false };
-    }
-
-    return { success: true, token: client.tokenHxb };
+const loginSuccess = await client.login({ email, password });
+if (!loginSuccess) {
+    // these credentials don't match any user in Hexabase
+} else {
+    // this is a valid Hexabase user
 }
 ```
 
-Notice that we instantiate `client` here. We also return the `tokenHxb` hexabase access token. This is a token that can be used with the hexabase client to authenticate actions and API usage, which we will use later on.
-
-If you look in the login page (`/login/page.tsx`) you'll see that we call our login function, and if it succeeds we save the hexabase access token to cookies. Then, on the actual Todo list page (`/page.tsx`) we have a mechanism to check if the user is logged in:
+If you have a workspace you specifically want to "log in" for, you can do something like this to verify that the given user has access to the workspace we want:
 
 ```typescript
-// make sure user is logged in
-const token = Cookies.get("tokenHxb");
+client = new HexabaseClient();
 
-if (!token) {
-    router.push("/login");
-} else {
-    // if a token already exists, asynchronously validate it
-    (async () => {
-        if (!(await tokenIsValid(token))) {
-            router.push("/login");
+const loginSuccess = await client.login({ email, password });
+if (!loginSuccess) {
+    // these credentials don't match any user in Hexabase
+    return;
+}
+
+const workspace = await client.workspace("insert-your-workspace-id");
+if (!workspace) {
+    // this user isn't authorized for this workspace
+    return;
+}
+// code proceeds here for users authorized for this workspace...
+```
+
+We have similar logic in `loginToHexabase` in `hexabase.ts`. In our function, we also return `tokenHxb` - the **auth token**. This auth token can be stored in cookies and re-used for authentication at other points in the application.
+
+If you look in the login page (`/login/page.tsx`) you'll see that we call a custom hook called `useAuthRedirect`. Here's a look inside:
+
+```typescript
+export function useAuthRedirect() {
+    const router = useRouter();
+    const token = Cookies.get("tokenHxb");
+
+    // make sure there's a valid token
+    useEffect(() => {
+        if (!token) {
+            router.push("/");
+            return;
         }
-    })();
+
+        // validate token asynchronously to avoid any delay
+        (async () => {
+            if (!(await tokenIsValid(token))) {
+                router.push("/");
+            }
+        })();
+    }, [router, token]);
 }
 ```
 
@@ -189,9 +207,27 @@ This does two things:
 -   checks for the existence of a token. if a token exists, then most likely we are good to go.
 -   but, it also checks to confirm that the given token is actually valid. this is called asynchronously, and redirects back to the login page if it fails.
 
+Putting this logic in a `useEffect` gives the added benefit of reducing unneeded validations; the application won't re-check authentication on every re-render, and instead only when the page first loads or if the token stored in cookies were to change.
+
 It's a good idea to make sure to call Hexabase APIs asynchronously whenever possible, just to improve user experience.
 
-If we were to add lots of different pages to this application, we might consider adding some form of middleware that always checks this logic when loading a page.
+In a larger application with many pages, you might explore putting this logic in some kind of middleware, but a hook like this also works quite well.
+
+### Datastore Operations
+
+So next we will move on to the database. Database operations will be relatively simple, since we just have a very basic todo list app here. We will need to load todos from Hexabase, and we will need to save new todos to Hexabase. But before we get to the code, first let's talk about **datastores** and **items**.
+
+A **datastore** is an individual database in a project. A project may have multiple datastores, and each datastore may be used for different purposes. For our very simple application here, we will just be using one datastore which will store our todos.
+
+An **item** is a single row of data in a datastore. Each item in our datastore will be a todo. Items can have **fields**, which are basically just different properties for that item. For example, a todo list item might have fields for things like title, description, due date, etc.
+
+If you used the todo template for creating your database (like I did), then you will have the following fields for your items:
+
+-   Title
+-   Assignee
+-   Category
+-   Status
+-   Due Date
 
 # original (TODO - delete)
 
