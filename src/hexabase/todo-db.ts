@@ -76,6 +76,30 @@ export async function deleteTodo(token: string, itemID: string): Promise<Item[] 
     const itemToDelete = await datastore.item(itemID);
     if (!await itemToDelete.delete()) {
         console.error("failed to delete item. does it exist?");
+        return undefined;
     }
+    return datastore.items();
+}
+
+export type TodoEditFields = {
+    Title?: string
+    DueDate?: string
+}
+
+export async function editTodo(token: string, itemID: string, fieldsToEdit: TodoEditFields): Promise<Item[] | undefined> {
+    const datastore = await getTodoDatastore(token);
+    if (!datastore) {
+        console.error("failed to get hexabase datastore");
+        return undefined;
+    }
+    const itemToEdit = await datastore.item(itemID);
+    if (!itemToEdit) {
+        console.error("failed to get item:", itemID);
+        return undefined;
+    }
+    for (const key in fieldsToEdit) {
+        itemToEdit.set(key, fieldsToEdit[key as keyof TodoEditFields]);
+    }
+    await itemToEdit.save();
     return datastore.items();
 }
