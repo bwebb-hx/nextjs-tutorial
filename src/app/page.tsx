@@ -3,73 +3,41 @@
 import TodoList from '@/components/todoList/TodoList';
 import React, { useEffect, useState } from 'react';
 import styles from './page.module.css';
-import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import { tokenIsValid, useAuthRedirect } from '@/hexabase/hexabase';
+import { useAuthRedirect } from '@/hexabase/hexabase';
+import DigitalRain from '@/components/effects/DigitalRain';
+import { loadTodosFromDatabase } from '@/hexabase/todo-db';
+import Cookies from 'js-cookie';
+import { Item } from '@hexabase/hexabase-js';
 
 const Home: React.FC = () => {
   const router = useRouter();
 
-  const [todos, setTodos] = useState<string[]>([]);
+  const [todos, setTodos] = useState<Item[]>();
   const [newTodo, setNewTodo] = useState<string>('');
 
-  const handleAddTodo = () => {
-    if (newTodo.trim()) {
-      setTodos([...todos, newTodo]);
-      setNewTodo('');
+  const token = Cookies.get("tokenHxb");
+  
+  useEffect(() => {
+    if (token && !todos) {
+      (async () => {
+        const todoItems = await loadTodosFromDatabase(token);
+        setTodos(todoItems);
+      })();
     }
+  }, [token, todos]);
+
+  const handleAddTodo = () => {
   };
 
   const handleRemoveTodo = (index: number) => {
-    const newTodos = todos.filter((_, i) => i !== index);
-    setTodos(newTodos);
   };
-
-  useEffect(() => {
-    const canvas = document.getElementById('matrix-canvas') as HTMLCanvasElement;
-    const ctx = canvas.getContext('2d');
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    const columns = Math.floor(width / 20) + 1;
-    const yPositions = Array(columns).fill(0);
-
-    const matrix = () => {
-      if (!ctx) return;
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.fillStyle = 'rgba(0, 255, 204, 0.4)';
-      ctx.font = '18px monospace';
-
-      yPositions.forEach((y, index) => {
-        const text = String.fromCharCode(Math.random() * 128);
-        const x = index * 20;
-        ctx.fillText(text, x, y);
-
-        // Randomize the speed for each column
-        if (y > height && Math.random() > 0.975) {
-          yPositions[index] = 0;
-        } else {
-          yPositions[index] = y + Math.random() * 20 + 10;
-        }
-      });
-    };
-
-    const interval = setInterval(matrix, 100);
-
-    return () => clearInterval(interval);
-  }, []);
 
   useAuthRedirect();
 
   return (
     <div className={styles.container}>
-      <canvas id="matrix-canvas" className={styles.matrixRain}></canvas>
+      <DigitalRain />
       <div className={styles.todoApp}>
         <h1>Todo List</h1>
         <div>
@@ -83,7 +51,7 @@ const Home: React.FC = () => {
             Add Todo
           </button>
         </div>
-        <TodoList todos={todos} onRemove={handleRemoveTodo} />
+        { todos && <TodoList todos={todos} onRemove={handleRemoveTodo} /> }
       </div>
     </div>
   );

@@ -1,9 +1,10 @@
 import React from 'react';
 import TodoItem from './TodoItem';
 import styles from '@/app/page.module.css';
+import { Item } from '@hexabase/hexabase-js';
 
 interface TodoListProps {
-  todos: string[];
+  todos: Item[];
   onRemove: (index: number) => void;
 }
 

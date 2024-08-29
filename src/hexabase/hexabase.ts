@@ -5,10 +5,14 @@ import Cookies from 'js-cookie';
 import { useEffect } from 'react';
 
 let client: HexabaseClient | null = null;
+export const WORKSPACE_ID = process.env.NEXT_PUBLIC_WORKSPACE_ID;
+export const PROJECT_ID = process.env.NEXT_PUBLIC_PROJECT_ID!;
+export const DATASTORE_ID = process.env.NEXT_PUBLIC_DATASTORE_ID!;
 
 interface LoginResult {
     success: boolean
     token?: string
+    err?: string
 }
 
 /**
@@ -22,9 +26,13 @@ export async function loginToHexabase(email: string, password: string): Promise<
 
     const loginSuccess = await client.login({ email, password });
     if (!loginSuccess) {
-        return { success: false };
+        return { success: false, err: "Login unsuccessful. Confirm your credentials and try again." };
     }
-    const workspace = await client.workspace("66c6ec1908aa582e965c5b95");
+    if (!WORKSPACE_ID) {
+        console.error("internal server error: failed to get environment variables");
+        return { success: false, err: "Internal server error. Please contact an administrator." };
+    }
+    const workspace = await client.workspace(WORKSPACE_ID);
     if (!workspace) {
         return { success: false };
     }

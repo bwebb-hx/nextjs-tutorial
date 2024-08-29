@@ -176,9 +176,9 @@ if (!workspace) {
 // code proceeds here for users authorized for this workspace...
 ```
 
-We have similar logic in `loginToHexabase` in `hexabase.ts`. In our function, we also return `tokenHxb` - the **auth token**. This auth token can be stored in cookies and re-used for authentication at other points in the application.
+We have similar logic in `loginToHexabase` in `hexabase.ts`. We call this function from the login page too. In our function, we also return `tokenHxb` - the **auth token**. This auth token can be stored in cookies and re-used for authentication at other points in the application.
 
-If you look in the login page (`/login/page.tsx`) you'll see that we call a custom hook called `useAuthRedirect`. Here's a look inside:
+If you look in the main todo list page (`/app/page.tsx`) you'll see that we call a custom hook called `useAuthRedirect`. Here's a look inside:
 
 ```typescript
 export function useAuthRedirect() {
@@ -228,6 +228,84 @@ If you used the todo template for creating your database (like I did), then you 
 -   Category
 -   Status
 -   Due Date
+
+For the purpose of this tutorial project, I'm only going to use `Title`, `Status`, and `Due Date`.
+
+#### Loading Items
+
+First, let's load the existing todo items from the database.
+
+This is a basic function that will load all the items in the database and print them to the console.
+
+```typescript
+export async function loadTodosFromDatabase(token: string) {
+    const datastore = await getTodoDatastore(token);
+    if (!datastore) {
+        console.error("failed to get hexabase datastore");
+        return;
+    }
+    const items = await datastore.items();
+    console.log(items);
+}
+```
+
+If you're connecting to the database correctly, you should get some output in the console like this:
+
+```javascript
+_existAttachment: false
+_linkItems: Array []
+_statusActions: Array []
+_unlinkItems: Array []
+actions: Array []
+createdAt: Date Thu Aug 22 2024 16:43:46 GMT+0900 (Japan Standard Time)
+createdBy: "66c5a551f61aa223c935f074"
+datastore: Object { templateName: "SEED1", extendLimitEextareaLength: 2000, ignoreSaveTemplate: false, … }
+fields: Object { Assignee: "X", Category: {…}, Title: "タスクD", … }
+id: "66c6ec32aad66aeb14e6957a"
+ignoreFieldUpdate: false
+revNo: 1
+seedItemId: "6372300ece139e5919f7c3b8"
+statusId: "66c6ec30f4e6466a9f8bed19"
+statusLabel: "In Review"
+statuses: Array []
+title: "タスクD"
+unread: 0
+updatedAt: Date Thu Aug 22 2024 16:43:46 GMT+0900 (Japan Standard Time)
+updatedBy: "66c5a551f61aa223c935f074"
+```
+
+These are `Item` type objects, which is defined [here](https://github.com/hexabase/hexabase-js/blob/31fa255ed184e0e73d37bfcda8eaa9979fbfeb1e/src/lib/packages/item/index.ts#L53) on github.
+
+For each `Item`, we probably will largely be interested in the `fields` property, which is a [`MapType`](https://github.com/hexabase/hexabase-js/blob/develop/src/lib/util/type/input.ts), which in turn is just a basic map with a `string` key and `any` value type.
+
+To get a field, such as "Title", you can use the following function:
+
+```typescript
+const fieldValue = item.get<string>("Title");
+```
+
+> The type passed with `get` (`<string>`) isn't required, but is helpful as it acts to cast the type onto the return value.
+
+#### Creating New Items
+
+So, now we know how to load items. Let's look into how we should create new items.
+
+Looking at the docs, we see the following code snippets can be used:
+
+```typescript
+// item() with no arguments tells the API to create a new item
+const newItem = await datastore.item();
+
+// this sets the Title field in the new item
+newItem.set("Title", "Learn about Hexabase SDK");
+```
+
+To save an item, you can simply call the `save` function.
+You use this same function to save updates to an existing item.
+
+```typescript
+await newItem.save();
+```
 
 # original (TODO - delete)
 

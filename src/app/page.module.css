@@ -98,28 +98,3 @@
   box-shadow: 0 0 24px #ff0055;
   transform: scale(1.05);
 }
-
-.matrixRain {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0; /* Behind content */
-  overflow: hidden;
-  pointer-events: none; /* Ensure clicks go through */
-}
-
-.matrixRain canvas {
-  display: block;
-}
-
-/* Animation and Characters */
-@keyframes rain {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
