@@ -307,6 +307,47 @@ You use this same function to save updates to an existing item.
 await newItem.save();
 ```
 
+When creating new items and setting their fields, you'll need to know how those fields are defined in the Hexabase database. You can of course see their names in the columns of the item table like this:
+
+![datastore items and field columns](image-1.png)
+
+And furthermore, if you click on an item, you can see some type definitions for them. But to be extra sure, I'd recommend using the **API Playground Panel** that's built into the hexabase management console for testing your database. You can use this tool to test all the APIs, so you can see an example payload, and the response your database will send:
+
+![api playground panel](image-3.png)
+
+When I run the Get Item API for a specific item, I can see the returned JSON, and I can see exactly what format to expect for the data:
+
+```json
+{
+  "title": "タスクB",
+  "rev_no": 1,
+  "field_values": {
+    "Assignee": {
+      "field_id": "Assignee",
+      "field_name": "担当",
+      "dataType": "text",
+      "value": "Y",
+      "sizeX": 6,
+      "sizeY": 1,
+      "col": 0,
+      "row": 2
+    },
+    "DueDate": {
+      "field_id": "DueDate",
+      "field_name": "期限",
+      "dataType": "datetime",
+      "value": "2016-01-01T00:00:00Z",
+      "sizeX": 5,
+      "sizeY": 1,
+      "col": 7,
+      "row": 1
+    },
+//...
+}
+```
+
+I used this to find out exactly how the data should be formatted when setting the `DueDate` Field. In fact, there is no space in the property's name, and I can see that it needs to be formatted as an ISO date string (not the built-in javascript `Date` type).
+
 # original (TODO - delete)
 
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
